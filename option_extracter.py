@@ -1,19 +1,16 @@
 import os
 from openai import AsyncOpenAI
-
 from together import AsyncTogether
 
-client = AsyncTogether()
+client = AsyncTogether(
+    base_url="https://api.scaleway.ai/v1",
+    api_key=os.environ['TOGETHER_API_KEY'])
 
+model = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
 
 async def get_option(query, correct_answer):
-    # client = AsyncOpenAI(
-    #     base_url="https://api.scaleway.ai/v1",
-    #     api_key=os.environ['TOGETHER_API_KEY']
-    # )
-
-    completion = await client.chat.completions.create(
-        model="meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    completion = await client.chat.complete(
+        model=model,
         messages=[{"role": "user", "content":
                   f"Напиши какой из вариантов ответов соответствует \
                 данному правильному ответу:\n\
@@ -33,13 +30,9 @@ def extract_sources(results):
             sources.append(res["url"])
     return sources
 
-# import asyncio
 
-# query = "В каком рейтинге (по состоянию на 2021 год) ИТМО впервые вошёл в топ-400 мировых университетов?\n1. ARWU (Shanghai Ranking)\n2. Times Higher Education (THE) World University Rankings\n3. QS World University Rankings\n4. U.S. News & World Report Best Global Universities"
-# correct_answer = "ИТМО впервые вошло в топ-400 мировых университетов в QS World University Rankings в 2021 году, заняв 365-е место."
+def check_if_options_exist(query):
+    if '1.' in query or '1)' in query or '1 )' in query or ' 1 ' in query:
+        return True
+    return False
 
-# async def main():
-#     answer = await get_option(query, correct_answer)
-#     print(answer)
-
-# asyncio.run(main())

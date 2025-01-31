@@ -3,21 +3,21 @@ main
 """
 import time
 import os
-
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Request, Response
 
+from fastapi import FastAPI, HTTPException, Request, Response
 from dotenv import load_dotenv
 from tavily import AsyncTavilyClient
 
 from utils.logger import setup_logger
 from schemas.request import PredictionRequest, PredictionResponse
-from option_extracter import get_option, extract_sources
+from option_extracter import get_option, extract_sources, check_if_options_exist
 
 logger = None
 
 load_dotenv()
 client = AsyncTavilyClient(api_key=os.environ["TAVILY_API_KEY"])
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -61,6 +61,7 @@ async def log_requests(request: Request, call_next):
         media_type=response.media_type,
     )
 
+
 @app.post("/api/request", response_model=PredictionResponse)
 async def predict(body: PredictionRequest):
     try:
@@ -73,20 +74,24 @@ async def predict(body: PredictionRequest):
         sources = extract_sources(results)
         await logger.info(f"Successfully processed request to tavily {body.id}")
 
-        await logger.info(f"Напиши какой из вариантов ответов соответствует \
-                данному правильному ответу:\n\
-              Вопрос:{query}\n\
-              Правильный ответ:{answer}\n\
-              напиши одно число - вариант ответа \
-                  соответствующий правильному")
-        option = await get_option(query=query, correct_answer=answer)
-        await logger.info(f"Successfully processed request to llama {body.id}")
+        if check_if_options_exist(query):
+            await logger.info(
+                "Напиши какой из вариантов ответов соответствует "
+                "данному правильному ответу:\n"
+                f"Вопрос: {query}\n"
+                f"Правильный ответ: {answer}\n"
+                "напиши одно число - вариант ответа соответствующий правильному"
+            )
+            option = await get_option(query=query, correct_answer=answer)
+            await logger.info(f"Successfully processed request to llama {body.id}")
+        else:
+            option = "null"
 
         response = PredictionResponse(
             id=body.id,
             answer=option,
             reasoning=answer,
-            sources=sources
+            sources=sources,
         )
         return response
 
