@@ -6,6 +6,6 @@ class PredictionRequest(BaseModel):
 
 class PredictionResponse(BaseModel):
     id: int
-    answer: int
+    answer: int | str
     reasoning: str
     sources: list[str]

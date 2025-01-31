@@ -23,9 +23,12 @@ async def setup_logger():
         mode="a",
         encoding="utf-8",
     )
-    stream_handler = AsyncStreamHandler(stream=sys.stdout)
+    
     file_handler.formatter = formatter
+    
+    stream_handler = AsyncStreamHandler(stream=sys.stdout)
     stream_handler.formatter = formatter
+    
     logger.add_handler(file_handler)
     logger.add_handler(stream_handler)
 
